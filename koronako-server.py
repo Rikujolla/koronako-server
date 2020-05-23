@@ -18,9 +18,9 @@ def test_if_corona(_data):
 	sql_conn.close()
 	if len(days) >0:
 		print (days[0])
-		return ("Exposure "+days[0])
+		return ("EXPOSUREDD "+days[0])
 	else:
-		return ("No exposure")
+		return ("NOEXPOSURE")
 
 def insert_corona_data(_data):
 	sql_conn = sqlite3.connect('../koronako-data/coronadata.db')
@@ -34,22 +34,17 @@ def insert_corona_data(_data):
 		i = i + 17
 	sql_conn.commit()
 	sql_conn.close()
-	return ("Your covid data inserted")
+	return ("SENTCOVIDD Covid data inserted")
 
+#def create_server_socket():
 # TCPSOCKET
 host = "172.28.172.2"
 port = 32661
-
 s = socket(AF_INET, SOCK_STREAM)
-
 print "Socket Made"
-
 s.bind((host,port))
-
 print "Socket Bound"
-
 s.listen(5)
-
 print "Listening for connections..."
 
 conn, addr = s.accept()
@@ -59,7 +54,7 @@ print 'Connection address:', addr
 while True:
 
     try:
-        data = conn.recv(1024)
+        data = conn.recv(4096)
 
         if not data: break
 	if data[:2] == '00':
@@ -67,10 +62,6 @@ while True:
 		conn.sendall(insert_corona_data(data))
 	else:
 		conn.sendall(test_if_corona(data))
-	#test_if_corona(data)
-        #print "Client data: "+data
-	#conn.sendall("No exposure")
-	#conn.sendall(test_if_corona(data))
 
     except socket.error:
         print "Error Occured."
