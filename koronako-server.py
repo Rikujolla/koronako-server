@@ -1,4 +1,4 @@
-from socket import *
+import SocketServer
 import struct
 import sqlite3
 
@@ -8,7 +8,7 @@ def test_if_corona(_data):
 	c.execute('''CREATE TABLE IF NOT EXISTS covid
              (date text, devicepair text, user text, reliability text)''')
 	days = []
-	i = 0
+	i = 17
 	while i < len(_data):
 		dev = (_data[i:i+17],)
 		for row in c.execute('SELECT devicepair FROM covid WHERE devicepair = ?', dev):
@@ -36,35 +36,22 @@ def insert_corona_data(_data):
 	sql_conn.close()
 	return ("SENTCOVIDD Covid data inserted")
 
-#def create_server_socket():
-# TCPSOCKET
-host = "172.28.172.2"
-port = 32661
-s = socket(AF_INET, SOCK_STREAM)
-print "Socket Made"
-s.bind((host,port))
-print "Socket Bound"
-s.listen(5)
-print "Listening for connections..."
+#https://docs.python.org/2/library/socketserver.html
+class MyTCPHandler(SocketServer.BaseRequestHandler):
+    def handle(self):
+        self.data = self.request.recv(4096).strip()
+        # Save infection data or test against saved data
+	if self.data[:4] == '00:0':
+		print (self.data[:4])
+		self.request.sendall(insert_corona_data(self.data))
+	elif self.data[:4] == '00:1':
+		print (self.data[:4])
+        	self.request.sendall(test_if_corona(self.data))
+	else:	
+		print (self.data[:4])
+        	self.request.sendall("ERRORERROR")
 
-conn, addr = s.accept()
-
-print 'Connection address:', addr
-
-while True:
-
-    try:
-        data = conn.recv(4096)
-
-        if not data: break
-	if data[:2] == '00':
-		print (data[:2])
-		conn.sendall(insert_corona_data(data))
-	else:
-		conn.sendall(test_if_corona(data))
-
-    except socket.error:
-        print "Error Occured."
-        break
-
-
+if __name__ == "__main__":
+    HOST, PORT = "172.28.172.2", 32661
+    server = SocketServer.TCPServer((HOST, PORT), MyTCPHandler)
+    server.serve_forever()
