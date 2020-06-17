@@ -1,9 +1,11 @@
+from SocketServer import TCPServer, ThreadingMixIn, BaseRequestHandler
 import SocketServer
 import struct
 import sqlite3
 import datetime
+import ssl
 
-version = '0.0.9'
+version = '0.1.0'
 delete_timer = 5000.0
 t1 = datetime.datetime.now()
 
@@ -63,8 +65,8 @@ def insert_corona_data(_data):
 	sql_conn.commit()
 	sql_conn.close()
 	return ("SENTCOVIDD Covid data inserted")
-
-#https://docs.python.org/2/library/socketserver.html
+##
+#Idea from https://docs.python.org/2/library/socketserver.html
 class MyTCPHandler(SocketServer.BaseRequestHandler):
     def handle(self):
 	global delete_timer
@@ -72,6 +74,7 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
 	global version
 	_vers = version[0:1] + ':' + version[2:3] + version[4:5]
         self.data = self.request.recv(4096).strip()
+	print (self.data[:8])
         # Save infection data or test against saved data
 	if self.data[:8] == '00:0'+_vers:
 		print (self.data[:8]) + ' NEWDATA'
@@ -90,8 +93,42 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
 	else:	
 		print (self.data[:8]) + ' ERROR'
         	self.request.sendall("ERRORERROR")
+##
+## 
+# Server classes MySSL_TCPServer and  MySSL_ThreadingTCPServer modified from Stack overflows guestion answer from WarriorPaw, licenced under CC BY-SA 3.0 
+# https://stackoverflow.com/questions/8582766/adding-ssl-support-to-socketserver
+class MySSL_TCPServer(TCPServer):
+    def __init__(self,
+                 server_address,
+                 RequestHandlerClass,
+                 certfile,
+                 keyfile,
+                 cert_reqs=ssl.CERT_OPTIONAL,
+                 ssl_version=ssl.PROTOCOL_TLSv1,
+                 bind_and_activate=True):
+        TCPServer.__init__(self, server_address, RequestHandlerClass, bind_and_activate)
+        self.certfile = certfile
+        self.keyfile = keyfile
+        self.cert_reqs = cert_reqs
+        self.ssl_version = ssl_version
+
+    def get_request(self):
+        newsocket, fromaddr = self.socket.accept()
+        connstream = ssl.wrap_socket(newsocket,
+                                 server_side=True,
+                                 cert_reqs=self.cert_reqs,
+                                 certfile = self.certfile,
+                                 keyfile = self.keyfile,
+                                 ssl_version = self.ssl_version)
+        return connstream, fromaddr
+
+class MySSL_ThreadingTCPServer(ThreadingMixIn, MySSL_TCPServer): pass
+##
+##
 
 if __name__ == "__main__":
-    HOST, PORT = "172.28.172.2", 32661
-    server = SocketServer.TCPServer((HOST, PORT), MyTCPHandler)
-    server.serve_forever()
+    HOST, PORT = "172.28.172.3", 4243
+    #server = SocketServer.TCPServer((HOST, PORT), MyTCPHandler)
+    #server.serve_forever()
+    MySSL_ThreadingTCPServer((HOST, PORT),MyTCPHandler,"../koronako-data/cert.pem","../koronako-data/keys.pem").serve_forever()
+
