@@ -4,7 +4,7 @@ import struct
 import sqlite3
 import datetime
 import ssl
-# Minimum koronako app version the koronako server supports
+# Minimum koronako app version the koronako server supports, updated
 version = '0.1.1'
 delete_timer = 5000.0
 t1 = datetime.datetime.now()
