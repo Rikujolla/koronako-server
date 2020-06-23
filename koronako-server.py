@@ -4,8 +4,8 @@ import struct
 import sqlite3
 import datetime
 import ssl
-
-version = '0.1.0'
+# Minimum koronako app version the koronako server supports
+version = '0.1.1'
 delete_timer = 5000.0
 t1 = datetime.datetime.now()
 
@@ -72,27 +72,35 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
 	global delete_timer
 	global t1
 	global version
-	_vers = version[0:1] + ':' + version[2:3] + version[4:5]
+	_vers = int(version[0:1] + version[2:3] + version[4:5])
+	print _vers
         self.data = self.request.recv(4096).strip()
 	print (self.data[:8])
+	# Avoid a possible int conversion error
+	try:
+		int(self.data[5:8])
+	except:
+		print (self.data[:8]) + ' OTHERERROR'
+        	self.request.sendall("OTHERERROR")
         # Save infection data or test against saved data
-	if self.data[:8] == '00:0'+_vers:
-		print (self.data[:8]) + ' NEWDATA'
-		self.request.sendall(insert_corona_data(self.data))
-	elif self.data[:8] == '00:1' + _vers:
-		print (self.data[:8]) + ' TEST' 
-        	self.request.sendall(test_if_corona(self.data))
-		if delete_timer > 3600.0:
-			delete_old_data()
-			t1 = datetime.datetime.now()
-			delete_timer = (datetime.datetime.now()-t1).total_seconds()
-			print delete_timer
-		else:
-			delete_timer = (datetime.datetime.now()-t1).total_seconds()
-			print delete_timer
-	else:	
-		print (self.data[:8]) + ' ERROR'
-        	self.request.sendall("ERRORERROR")
+	else:
+		if self.data[:4] == '00:0' and int(self.data[5:8]) >= _vers:
+			print (self.data[:8]) + ' NEWDATA'
+			self.request.sendall(insert_corona_data(self.data))
+		elif self.data[:4] == '00:1' and int(self.data[5:8]) >= _vers:
+			print (self.data[:8]) + ' TEST' 
+	        	self.request.sendall(test_if_corona(self.data))
+			if delete_timer > 3600.0:
+				delete_old_data()
+				t1 = datetime.datetime.now()
+				delete_timer = (datetime.datetime.now()-t1).total_seconds()
+				print delete_timer
+			else:
+				delete_timer = (datetime.datetime.now()-t1).total_seconds()
+				print delete_timer
+		else:	
+			print (self.data[:8]) + ' ERROR'
+	        	self.request.sendall("ERRORERROR")
 ##
 ## 
 # Server classes MySSL_TCPServer and  MySSL_ThreadingTCPServer modified from Stack overflows guestion answer from WarriorPaw, licenced under CC BY-SA 3.0 
@@ -127,7 +135,7 @@ class MySSL_ThreadingTCPServer(ThreadingMixIn, MySSL_TCPServer): pass
 ##
 
 if __name__ == "__main__":
-    HOST, PORT = "172.28.172.3", 4243
+    HOST, PORT = "77.240.23.45", 4243
     #server = SocketServer.TCPServer((HOST, PORT), MyTCPHandler)
     #server.serve_forever()
     MySSL_ThreadingTCPServer((HOST, PORT),MyTCPHandler,"../koronako-data/cert.pem","../koronako-data/keys.pem").serve_forever()

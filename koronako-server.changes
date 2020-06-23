@@ -1,5 +1,7 @@
 #
 
+* Tue Jun 23 2020 Riku Lahtinen <rikul.lajolla@kiu.as> 0.1.1-1
+- App version checking updated to meet version 0.1.1 requirements
 
 * Thu May 28 2020 Riku Lahtinen <rikul.lajolla@kiu.as> 0.0.9-1
 - Deleting old data
