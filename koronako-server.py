@@ -74,8 +74,18 @@ class MyTCPHandler(SocketServer.BaseRequestHandler):
 	global version
 	_vers = int(version[0:1] + version[2:3] + version[4:5])
 	print _vers
-        self.data = self.request.recv(4096).strip()
-	print (self.data[:8])
+	rata = ''
+	while 1:
+        	self.data = self.request.recv(1024).strip()
+		if not self.data:
+			break
+		elif self.data[-1:] <> "-":
+			rata = rata + self.data
+		else:
+			rata = rata + self.data[:-1]
+			break
+	self.data = rata
+	print self.data
 	# Avoid a possible int conversion error
 	try:
 		int(self.data[5:8])
