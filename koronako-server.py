@@ -4,8 +4,9 @@ import struct
 import sqlite3
 import datetime
 import ssl
+import settings
 # Minimum koronako app version the koronako server supports, updated
-version = '0.1.1'
+version = '0.1.4'
 delete_timer = 5000.0
 t1 = datetime.datetime.now()
 
@@ -145,8 +146,7 @@ class MySSL_ThreadingTCPServer(ThreadingMixIn, MySSL_TCPServer): pass
 ##
 
 if __name__ == "__main__":
-    HOST, PORT = "77.240.23.45", 4243
-    #server = SocketServer.TCPServer((HOST, PORT), MyTCPHandler)
-    #server.serve_forever()
-    MySSL_ThreadingTCPServer((HOST, PORT),MyTCPHandler,"../koronako-data/cert.pem","../koronako-data/keys.pem").serve_forever()
+	HOST = settings.host_local
+	PORT = settings.port_local
+	MySSL_ThreadingTCPServer((HOST, PORT),MyTCPHandler,"../koronako-data/cert.pem","../koronako-data/keys.pem").serve_forever()
 
